@@ -15,20 +15,28 @@ HOST, PORT = "localhost", 9999
 
 # SOCK_DGRAM is the socket type to use for UDP sockets
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+sock.setblocking(False)
 
 message_protocol = MessageProtocol()
+
+count = 1
 
 # As you can see, there is no connect() call; UDP has no connections.
 # Instead, data is directly sent to the recipient via sendto().
 try:
     while True:
-        data = message_protocol.create(MESSAGE_TYPE.HELLO, "hello, world")
+        data = message_protocol.create(MESSAGE_TYPE.HELLO, "hello, world {}".format(count))
+        count += 1
         sock.sendto(data, (HOST, PORT))
-        received = sock.recv(1024)
-        received = message_protocol.parse(received)
 
-        print("Sent:     {}".format(data))
-        print("Received: {}".format(received))
+        try:
+            message, address = sock.recvfrom(8192)
+            if message:
+                print(message)
+        except:
+            pass
 
         time.sleep(0.1)
 except KeyboardInterrupt:

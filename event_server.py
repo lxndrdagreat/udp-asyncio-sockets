@@ -4,13 +4,11 @@ from message import MESSAGE_TYPE, MessageProtocol
 
 class EventProtocol:
     def connection_made(self, transport):
-        print('start', transport)
-        self.transport = transport
+        self.transport = transport        
 
     def datagram_received(self, data, addr):
         if self.server:
-            self.server.handle(data, addr)
-        # self.transport.sendto(data, addr)
+            self.server.handle(data, addr)        
 
     def error_received(self, exc):
         print('Error received:', exc)
@@ -21,6 +19,9 @@ class EventProtocol:
 class EventServer:
     def __init__(self, message_protocol=MessageProtocol):
         self.handlers = {}
+
+        # keep a collection of clients
+        self._sockets = []
 
         loop = asyncio.get_event_loop()
 
@@ -33,14 +34,20 @@ class EventServer:
 
         self._message_protocol = MessageProtocol()
 
-    def handle(self, data, addr):        
-        data = self._message_protocol.parse(data)        
+    def handle(self, data, addr):
+        if addr not in self._sockets:
+            self._sockets.append(addr)
+            print("new client connection: {}".format(addr))
+        
+        data = self._message_protocol.parse(data)     
         self._trigger(data['type'], data['pkg'], addr)
 
 
     def _trigger(self, event, data, addr):
         if self.handlers[event]:
             self.handlers[event](data, addr)
+        else:
+            print("Unhandled event [{}]. Payload: {}".format(event, data))
 
     def send(self, addr, event_type, payload):
         message = self._message_protocol.create(event_type, payload)
