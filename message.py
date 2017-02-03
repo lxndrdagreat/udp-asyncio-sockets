@@ -2,18 +2,18 @@ from enum import Enum
 import json
 
 class MESSAGE_TYPE(Enum):
-    HELLO = 1
+    HELLO = 0
 
-def create_message(msg_type, package):
-    msg = {
-        "type": msg_type.value,
-        "pkg": package
-    }
+class MessageProtocol:
 
-    msg_json = json.dumps(msg)
+    def create(self, msg_type, package):
+        msg_json = "{}{}\n".format(msg_type.value, json.dumps(package))
+        return bytes(msg_json, "utf-8")
 
-    return bytes(msg_json+"\n", "utf-8")
-
-def parse_message(message):
-    parsed = message.decode("utf-8").rstrip()
-    return json.loads(parsed)
+    def parse(self, message):
+        parsed = message.decode("utf-8").rstrip()
+        msg = {
+            "type": int(parsed[0]),
+            "pkg": json.loads(parsed[1:])
+        }    
+        return msg

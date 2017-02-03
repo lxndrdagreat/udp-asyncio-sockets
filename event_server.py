@@ -1,6 +1,6 @@
 import asyncio
 import json
-from message import MESSAGE_TYPE, parse_message
+from message import MESSAGE_TYPE, MessageProtocol
 
 class EventProtocol:
     def connection_made(self, transport):
@@ -19,28 +19,32 @@ class EventProtocol:
         print('stop', exc)
 
 class EventServer:
-    def __init__(self):
+    def __init__(self, message_protocol=MessageProtocol):
         self.handlers = {}
 
         loop = asyncio.get_event_loop()
 
-        t = asyncio.Task(loop.create_datagram_endpoint(EventProtocol, local_addr=('localhost', 9999)))
-        transport, prot = loop.run_until_complete(t)
+        task = asyncio.Task(loop.create_datagram_endpoint(EventProtocol, local_addr=('localhost', 9999)))
+        transport, prot = loop.run_until_complete(task)
 
-        self.protocol = prot
-        self.protocol.server = self
+        self._server = transport
+        self._protocol = prot
+        self._protocol.server = self
+
+        self._message_protocol = MessageProtocol()
 
     def handle(self, data, addr):        
-        data = parse_message(data)        
-        print('PARSED:', data, addr)
-        if data['type'] == MESSAGE_TYPE.HELLO.value:
-            print("it is a HELLO!")
-            self._trigger(MESSAGE_TYPE.HELLO, data['pkg'], addr)
+        data = self._message_protocol.parse(data)        
+        self._trigger(data['type'], data['pkg'], addr)
 
 
     def _trigger(self, event, data, addr):
         if self.handlers[event]:
             self.handlers[event](data, addr)
+
+    def send(self, addr, event_type, payload):
+        message = self._message_protocol.create(event_type, payload)
+        self._server.sendto(message, addr)
 
     def on(self, event, handler=None):
         """Register an event handler.
@@ -82,30 +86,3 @@ class EventServer:
         if handler is None:
             return set_handler
         set_handler(handler)
-
-
-async def wakeup():
-    while True:
-        await asyncio.sleep(1)
-
-serv = EventServer()
-
-@serv.on(MESSAGE_TYPE.HELLO)
-def hello(data, client):
-    print("I AM THE HANDLER! THIS IS MY DATA: {}".format(data))
-
-if __name__ == '__main__':
-    print("starting up..")
-
-    loop = asyncio.get_event_loop()
-
-    asyncio.async(wakeup())
-
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        pass
-
-    print("stop")
-
-    loop.stop()
