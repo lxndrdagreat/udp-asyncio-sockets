@@ -38,7 +38,7 @@ class EventServer:
         if addr not in self._sockets:
             self._sockets.append(addr)
             print("new client connection: {}".format(addr))
-        
+
         data = self._message_protocol.parse(data)     
         self._trigger(data['type'], data['pkg'], addr)
 
@@ -52,6 +52,10 @@ class EventServer:
     def send(self, addr, event_type, payload):
         message = self._message_protocol.create(event_type, payload)
         self._server.sendto(message, addr)
+
+    def send_all(self, event_type, payload):
+        for client in self._sockets:
+            self.send(client, event_type, payload)
 
     def on(self, event, handler=None):
         """Register an event handler.

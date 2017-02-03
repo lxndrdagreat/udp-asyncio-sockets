@@ -12,7 +12,8 @@ serv = EventServer()
 def hello(data, client):
     print("[{}]: {}".format(client, data))
     # take the message from the client and send it right back.
-    serv.send(client, MESSAGE_TYPE.HELLO, "REPEAT: {}".format(data))    
+    # serv.send(client, MESSAGE_TYPE.HELLO, "{}: {}".format(client, data))
+    serv.send_all(MESSAGE_TYPE.HELLO, "{}: {}".format(client, data))
 
 
 if __name__ == '__main__':
