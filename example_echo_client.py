@@ -9,8 +9,8 @@ import socket
 import sys
 import time
 import json
-from message import MESSAGE_TYPE, MessageProtocol
 import argparse
+from message import MessageProtocol
 
 ARGS = argparse.ArgumentParser(description="UDP Echo Client Example")
 ARGS.add_argument(
@@ -28,34 +28,28 @@ if __name__ == '__main__':
     sock.setblocking(False)
 
     message_protocol = MessageProtocol()
+# As you can see, there is no connect() call; UDP has no connections.
+# Instead, data is directly sent to the recipient via sendto().
+try:
+    while True:
 
-    count = 1
-    time_last = time.time()
-    send_timer = 0
-    send_timer_amount = int(args.wait)
+        # this will send a message to the server periodically
+        time_now = time.time()
+        delta = time_now - time_last
+        time_last = time_now        
+        send_timer -= delta
+        if send_timer <= 0:
+            data = message_protocol.create("hello", "hello, world {}".format(count))
+            count += 1
+            sock.sendto(data, (HOST, PORT))
+            send_timer = send_timer_amount
 
-    # As you can see, there is no connect() call; UDP has no connections.
-    # Instead, data is directly sent to the recipient via sendto().
-    try:
-        while True:
-
-            # this will send a message to the server periodically
-            time_now = time.time()
-            delta = time_now - time_last
-            time_last = time_now        
-            send_timer -= delta
-            if send_timer <= 0:
-                data = message_protocol.create(MESSAGE_TYPE.HELLO, "hello, world {}".format(count))
-                count += 1
-                sock.sendto(data, (HOST, PORT))
-                send_timer = send_timer_amount
-
-            try:
-                message, address = sock.recvfrom(8192)
-                if message:
-                    print(message)
-            except:
-                pass
+        try:
+            message, address = sock.recvfrom(8192)
+            if message:
+                print(message)
+        except:
+            pass
             
     except KeyboardInterrupt:
         pass

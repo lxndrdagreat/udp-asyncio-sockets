@@ -8,13 +8,9 @@ import socket
 import sys
 import time
 import json
-from message import MESSAGE_TYPE, MessageProtocol
+from server import MessageProtocol
 
 HOST, PORT = "localhost", 9999
-data = {
-    "type": "hello",
-    "message": "hello world"
-}
 
 # SOCK_DGRAM is the socket type to use for UDP sockets
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -25,7 +21,7 @@ message_protocol = MessageProtocol()
 # Instead, data is directly sent to the recipient via sendto().
 try:
     while True:
-        sock.sendto(message_protocol.create(MESSAGE_TYPE.HELLO, "hello, world"), (HOST, PORT))
+        sock.sendto(message_protocol.create("hello", "hello, world"), (HOST, PORT))
         # received = str(sock.recv(1024), "utf-8")
 
         print("Sent:     {}".format(data))
