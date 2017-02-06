@@ -9,7 +9,7 @@ import socket
 import sys
 import time
 import json
-from message import MESSAGE_TYPE, MessageProtocol
+from message import MessageProtocol
 
 HOST, PORT = "localhost", 9999
 
@@ -27,7 +27,7 @@ count = 1
 # Instead, data is directly sent to the recipient via sendto().
 try:
     while True:
-        data = message_protocol.create(MESSAGE_TYPE.HELLO, "hello, world {}".format(count))
+        data = message_protocol.create("hello", "hello, world {}".format(count))
         count += 1
         sock.sendto(data, (HOST, PORT))
 
