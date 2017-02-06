@@ -28,29 +28,33 @@ if __name__ == '__main__':
     sock.setblocking(False)
 
     message_protocol = MessageProtocol()
-# As you can see, there is no connect() call; UDP has no connections.
-# Instead, data is directly sent to the recipient via sendto().
-try:
-    while True:
 
-        # this will send a message to the server periodically
-        time_now = time.time()
-        delta = time_now - time_last
-        time_last = time_now        
-        send_timer -= delta
-        if send_timer <= 0:
-            data = message_protocol.create("hello", "hello, world {}".format(count))
-            count += 1
-            sock.sendto(data, (HOST, PORT))
-            send_timer = send_timer_amount
+    time_last = time.time()
+    send_timer = 0
+    send_timer_amount = int(args.wait)
+    count = 0
 
-        try:
-            message, address = sock.recvfrom(8192)
-            if message:
-                print(message)
-        except:
-            pass
-            
+    try:
+        while True:
+
+            # this will send a message to the server periodically
+            time_now = time.time()
+            delta = time_now - time_last
+            time_last = time_now        
+            send_timer -= delta
+            if send_timer <= 0:
+                data = message_protocol.create("message", "hello, world {}".format(count))
+                count += 1
+                sock.sendto(data, (HOST, PORT))
+                send_timer = send_timer_amount
+
+            try:
+                message, address = sock.recvfrom(8192)
+                if message:
+                    print(message)
+            except:
+                pass
+                
     except KeyboardInterrupt:
         pass
     finally:
